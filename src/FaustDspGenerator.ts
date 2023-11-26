@@ -79,6 +79,23 @@ export interface IFaustMonoDspGenerator {
     processorName?: string
   ): Promise<IFaustMonoWebAudioNode | null>;
 
+  createProcessorCode(
+    context: BaseAudioContext,
+    name?: string,
+    factory?: LooseFaustDspFactory,
+    processorName?: string
+  ): Promise<string | undefined>;
+
+  createNodeFromProcCode(
+    context: BaseAudioContext,
+    processorCode: string,
+    name?: string,
+    factory?: LooseFaustDspFactory,
+    sp?: boolean,
+    bufferSize?: number,
+    processorName?: string
+  ): Promise<IFaustMonoWebAudioNode | null>;
+
   /**
    * Create a monophonic WebAudio node (either ScriptProcessorNode or AudioWorkletNode).
    *
@@ -348,7 +365,7 @@ const dependencies = {
     name = this.name,
     factory = this.factory as LooseFaustDspFactory,
     processorName = factory?.shaKey || name
-  ) {
+  ): Promise<string | undefined> {
     if (!factory)
       throw new Error(
         "Code is not compiled, please define the factory or call `await this.compile()` first."
@@ -388,8 +405,8 @@ const dependencies = {
 
   async createNodeFromProcCode<SP extends boolean = false>(
     context: BaseAudioContext,
-    name = this.name,
     processorCode: string,
+    name = this.name,
     factory = this.factory as LooseFaustDspFactory,
     sp = false as SP,
     bufferSize = 1024,

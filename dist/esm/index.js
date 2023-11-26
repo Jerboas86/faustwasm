@@ -3474,13 +3474,26 @@ var _FaustMonoDspGenerator = class {
   async createNode(context, name = this.name, factory = this.factory, sp = false, bufferSize = 1024, processorName = (factory == null ? void 0 : factory.shaKey) || name) {
     var _a, _b;
     if (!factory)
-      throw new Error("Code is not compiled, please define the factory or call `await this.compile()` first.");
+      throw new Error(
+        "Code is not compiled, please define the factory or call `await this.compile()` first."
+      );
     const meta = JSON.parse(factory.json);
     const sampleSize = meta.compile_options.match("-double") ? 8 : 4;
     if (sp) {
-      const instance = await FaustWasmInstantiator_default.createAsyncMonoDSPInstance(factory);
-      const monoDsp = new FaustMonoWebAudioDsp(instance, context.sampleRate, sampleSize, bufferSize);
-      const sp2 = context.createScriptProcessor(bufferSize, monoDsp.getNumInputs(), monoDsp.getNumOutputs());
+      const instance = await FaustWasmInstantiator_default.createAsyncMonoDSPInstance(
+        factory
+      );
+      const monoDsp = new FaustMonoWebAudioDsp(
+        instance,
+        context.sampleRate,
+        sampleSize,
+        bufferSize
+      );
+      const sp2 = context.createScriptProcessor(
+        bufferSize,
+        monoDsp.getNumInputs(),
+        monoDsp.getNumOutputs()
+      );
       Object.setPrototypeOf(sp2, FaustMonoScriptProcessorNode.prototype);
       sp2.init(monoDsp);
       return sp2;
@@ -3511,21 +3524,113 @@ const dependencies = {
 // Generate the actual AudioWorkletProcessor code
 (${FaustAudioWorkletProcessor_default.toString()})(dependencies, faustData);
 `;
-          const url = URL.createObjectURL(new Blob([processorCode], { type: "text/javascript" }));
+          const url = URL.createObjectURL(
+            new Blob([processorCode], { type: "text/javascript" })
+          );
           await context.audioWorklet.addModule(url);
           (_b = _FaustMonoDspGenerator.gWorkletProcessors.get(context)) == null ? void 0 : _b.add(processorName);
         } catch (e) {
           throw e;
         }
       }
-      const node = new FaustMonoAudioWorkletNode(context, processorName, factory, sampleSize);
+      const node = new FaustMonoAudioWorkletNode(
+        context,
+        processorName,
+        factory,
+        sampleSize
+      );
+      return node;
+    }
+  }
+  async createProcessorCode(context, name = this.name, factory = this.factory, processorName = (factory == null ? void 0 : factory.shaKey) || name) {
+    var _a;
+    if (!factory)
+      throw new Error(
+        "Code is not compiled, please define the factory or call `await this.compile()` first."
+      );
+    const meta = JSON.parse(factory.json);
+    if (!_FaustMonoDspGenerator.gWorkletProcessors.has(context))
+      _FaustMonoDspGenerator.gWorkletProcessors.set(context, /* @__PURE__ */ new Set());
+    if (!((_a = _FaustMonoDspGenerator.gWorkletProcessors.get(context)) == null ? void 0 : _a.has(processorName))) {
+      return `
+// DSP name and JSON string for DSP are generated
+const faustData = ${JSON.stringify({
+        processorName,
+        dspName: name,
+        dspMeta: meta,
+        poly: false
+      })};
+// Implementation needed classes of functions
+const ${FaustDspInstance.name} = ${FaustDspInstance.toString()}
+const ${FaustBaseWebAudioDsp.name} = ${FaustBaseWebAudioDsp.toString()}
+const ${FaustMonoWebAudioDsp.name} = ${FaustMonoWebAudioDsp.toString()}
+const ${FaustWasmInstantiator_default.name} = ${FaustWasmInstantiator_default.toString()}
+// Put them in dependencies
+const dependencies = {
+  FaustBaseWebAudioDsp: ${FaustBaseWebAudioDsp.name},
+  FaustMonoWebAudioDsp: ${FaustMonoWebAudioDsp.name},
+  FaustWasmInstantiator: ${FaustWasmInstantiator_default.name}
+};
+// Generate the actual AudioWorkletProcessor code
+(${FaustAudioWorkletProcessor_default.toString()})(dependencies, faustData);
+`;
+    }
+  }
+  async createNodeFromProcCode(context, processorCode, name = this.name, factory = this.factory, sp = false, bufferSize = 1024, processorName = (factory == null ? void 0 : factory.shaKey) || name) {
+    var _a, _b;
+    if (!factory)
+      throw new Error(
+        "Code is not compiled, please define the factory or call `await this.compile()` first."
+      );
+    const meta = JSON.parse(factory.json);
+    const sampleSize = meta.compile_options.match("-double") ? 8 : 4;
+    if (sp) {
+      const instance = await FaustWasmInstantiator_default.createAsyncMonoDSPInstance(
+        factory
+      );
+      const monoDsp = new FaustMonoWebAudioDsp(
+        instance,
+        context.sampleRate,
+        sampleSize,
+        bufferSize
+      );
+      const sp2 = context.createScriptProcessor(
+        bufferSize,
+        monoDsp.getNumInputs(),
+        monoDsp.getNumOutputs()
+      );
+      Object.setPrototypeOf(sp2, FaustMonoScriptProcessorNode.prototype);
+      sp2.init(monoDsp);
+      return sp2;
+    } else {
+      if (!_FaustMonoDspGenerator.gWorkletProcessors.has(context))
+        _FaustMonoDspGenerator.gWorkletProcessors.set(context, /* @__PURE__ */ new Set());
+      if (!((_a = _FaustMonoDspGenerator.gWorkletProcessors.get(context)) == null ? void 0 : _a.has(processorName))) {
+        try {
+          const url = URL.createObjectURL(
+            new Blob([processorCode], { type: "text/javascript" })
+          );
+          await context.audioWorklet.addModule(url);
+          (_b = _FaustMonoDspGenerator.gWorkletProcessors.get(context)) == null ? void 0 : _b.add(processorName);
+        } catch (e) {
+          throw e;
+        }
+      }
+      const node = new FaustMonoAudioWorkletNode(
+        context,
+        processorName,
+        factory,
+        sampleSize
+      );
       return node;
     }
   }
   async createFFTNode(context, fftUtils, name = this.name, factory = this.factory, fftOptions = {}, processorName = (factory == null ? void 0 : factory.shaKey) ? `${factory.shaKey}_fft` : name) {
     var _a, _b;
     if (!factory)
-      throw new Error("Code is not compiled, please define the factory or call `await this.compile()` first.");
+      throw new Error(
+        "Code is not compiled, please define the factory or call `await this.compile()` first."
+      );
     const meta = JSON.parse(factory.json);
     const sampleSize = meta.compile_options.match("-double") ? 8 : 4;
     if (!_FaustMonoDspGenerator.gWorkletProcessors.has(context))
@@ -3556,14 +3661,25 @@ const dependencies = {
 // Generate the actual AudioWorkletProcessor code
 (${FaustFFTAudioWorkletProcessor_default.toString()})(dependencies, faustData);
 `;
-        const url = URL.createObjectURL(new Blob([processorCode], { type: "text/javascript" }));
+        const url = URL.createObjectURL(
+          new Blob([processorCode], { type: "text/javascript" })
+        );
         await context.audioWorklet.addModule(url);
         (_b = _FaustMonoDspGenerator.gWorkletProcessors.get(context)) == null ? void 0 : _b.add(processorName);
       } catch (e) {
         throw e;
       }
     }
-    const node = new FaustMonoAudioWorkletNode(context, processorName, factory, sampleSize, { channelCount: Math.max(1, Math.ceil(meta.inputs / 3)), outputChannelCount: [Math.ceil(meta.outputs / 2)] });
+    const node = new FaustMonoAudioWorkletNode(
+      context,
+      processorName,
+      factory,
+      sampleSize,
+      {
+        channelCount: Math.max(1, Math.ceil(meta.inputs / 3)),
+        outputChannelCount: [Math.ceil(meta.outputs / 2)]
+      }
+    );
     if (fftOptions.fftSize) {
       const param = node.parameters.get("fftSize");
       if (param)
@@ -3588,7 +3704,9 @@ const dependencies = {
   }
   async createAudioWorkletProcessor(name = this.name, factory = this.factory, processorName = (factory == null ? void 0 : factory.shaKey) || name) {
     if (!factory)
-      throw new Error("Code is not compiled, please define the factory or call `await this.compile()` first.");
+      throw new Error(
+        "Code is not compiled, please define the factory or call `await this.compile()` first."
+      );
     const meta = JSON.parse(factory.json);
     const dependencies = {
       FaustBaseWebAudioDsp,
@@ -3612,11 +3730,20 @@ const dependencies = {
   }
   async createOfflineProcessor(sampleRate, bufferSize, factory = this.factory) {
     if (!factory)
-      throw new Error("Code is not compiled, please define the factory or call `await this.compile()` first.");
+      throw new Error(
+        "Code is not compiled, please define the factory or call `await this.compile()` first."
+      );
     const meta = JSON.parse(factory.json);
-    const instance = await FaustWasmInstantiator_default.createAsyncMonoDSPInstance(factory);
+    const instance = await FaustWasmInstantiator_default.createAsyncMonoDSPInstance(
+      factory
+    );
     const sampleSize = meta.compile_options.match("-double") ? 8 : 4;
-    const monoDsp = new FaustMonoWebAudioDsp(instance, sampleRate, sampleSize, bufferSize);
+    const monoDsp = new FaustMonoWebAudioDsp(
+      instance,
+      sampleRate,
+      sampleSize,
+      bufferSize
+    );
     return new FaustMonoOfflineProcessor(monoDsp, bufferSize);
   }
   getMeta() {
@@ -3641,11 +3768,19 @@ adapt(1,1) = _; adapt(2,2) = _,_; adapt(1,2) = _ <: _,_; adapt(2,1) = _,_ :> _;
 adaptor(F,G) = adapt(outputs(F),inputs(G));
 dsp_code = environment{${dspCode}};
 process = adaptor(dsp_code.process, dsp_code.effect) : dsp_code.effect;`) {
-    this.voiceFactory = await compiler.createPolyDSPFactory(name, dspCode, args);
+    this.voiceFactory = await compiler.createPolyDSPFactory(
+      name,
+      dspCode,
+      args
+    );
     if (!this.voiceFactory)
       return null;
     try {
-      this.effectFactory = await compiler.createPolyDSPFactory(name, effectCode, args);
+      this.effectFactory = await compiler.createPolyDSPFactory(
+        name,
+        effectCode,
+        args
+      );
     } catch (e) {
       console.warn(e);
     }
@@ -3660,14 +3795,30 @@ process = adaptor(dsp_code.process, dsp_code.effect) : dsp_code.effect;`) {
   async createNode(context, voices, name = this.name, voiceFactory = this.voiceFactory, mixerModule = this.mixerModule, effectFactory = this.effectFactory, sp = false, bufferSize = 1024, processorName = ((voiceFactory == null ? void 0 : voiceFactory.shaKey) || "") + ((effectFactory == null ? void 0 : effectFactory.shaKey) || "") || `${name}_poly`) {
     var _a, _b;
     if (!voiceFactory)
-      throw new Error("Code is not compiled, please define the factory or call `await this.compile()` first.");
+      throw new Error(
+        "Code is not compiled, please define the factory or call `await this.compile()` first."
+      );
     const voiceMeta = JSON.parse(voiceFactory.json);
     const effectMeta = effectFactory ? JSON.parse(effectFactory.json) : void 0;
     const sampleSize = voiceMeta.compile_options.match("-double") ? 8 : 4;
     if (sp) {
-      const instance = await FaustWasmInstantiator_default.createAsyncPolyDSPInstance(voiceFactory, mixerModule, voices, effectFactory || void 0);
-      const polyDsp = new FaustPolyWebAudioDsp(instance, context.sampleRate, sampleSize, bufferSize);
-      const sp2 = context.createScriptProcessor(bufferSize, polyDsp.getNumInputs(), polyDsp.getNumOutputs());
+      const instance = await FaustWasmInstantiator_default.createAsyncPolyDSPInstance(
+        voiceFactory,
+        mixerModule,
+        voices,
+        effectFactory || void 0
+      );
+      const polyDsp = new FaustPolyWebAudioDsp(
+        instance,
+        context.sampleRate,
+        sampleSize,
+        bufferSize
+      );
+      const sp2 = context.createScriptProcessor(
+        bufferSize,
+        polyDsp.getNumInputs(),
+        polyDsp.getNumOutputs()
+      );
       Object.setPrototypeOf(sp2, FaustPolyScriptProcessorNode.prototype);
       sp2.init(polyDsp);
       return sp2;
@@ -3700,20 +3851,32 @@ const dependencies = {
 // Generate the actual AudioWorkletProcessor code
 (${FaustAudioWorkletProcessor_default.toString()})(dependencies, faustData);
 `;
-          const url = URL.createObjectURL(new Blob([processorCode], { type: "text/javascript" }));
+          const url = URL.createObjectURL(
+            new Blob([processorCode], { type: "text/javascript" })
+          );
           await context.audioWorklet.addModule(url);
           (_b = _FaustPolyDspGenerator.gWorkletProcessors.get(context)) == null ? void 0 : _b.add(processorName);
         } catch (e) {
           throw e;
         }
       }
-      const node = new FaustPolyAudioWorkletNode(context, processorName, voiceFactory, mixerModule, voices, sampleSize, effectFactory || void 0);
+      const node = new FaustPolyAudioWorkletNode(
+        context,
+        processorName,
+        voiceFactory,
+        mixerModule,
+        voices,
+        sampleSize,
+        effectFactory || void 0
+      );
       return node;
     }
   }
   async createAudioWorkletProcessor(name = this.name, voiceFactory = this.voiceFactory, effectFactory = this.effectFactory, processorName = ((voiceFactory == null ? void 0 : voiceFactory.shaKey) || "") + ((effectFactory == null ? void 0 : effectFactory.shaKey) || "") || `${name}_poly`) {
     if (!voiceFactory)
-      throw new Error("Code is not compiled, please define the factory or call `await this.compile()` first.");
+      throw new Error(
+        "Code is not compiled, please define the factory or call `await this.compile()` first."
+      );
     const voiceMeta = JSON.parse(voiceFactory.json);
     const effectMeta = effectFactory ? JSON.parse(effectFactory.json) : void 0;
     const sampleSize = voiceMeta.compile_options.match("-double") ? 8 : 4;
@@ -3732,7 +3895,10 @@ const dependencies = {
         poly: true,
         effectMeta
       };
-      const Processor = FaustAudioWorkletProcessor_default(dependencies, faustData);
+      const Processor = FaustAudioWorkletProcessor_default(
+        dependencies,
+        faustData
+      );
       return Processor;
     } catch (e) {
       throw e;
@@ -3740,12 +3906,24 @@ const dependencies = {
   }
   async createOfflineProcessor(sampleRate, bufferSize, voices, voiceFactory = this.voiceFactory, mixerModule = this.mixerModule, effectFactory = this.effectFactory) {
     if (!voiceFactory)
-      throw new Error("Code is not compiled, please define the factory or call `await this.compile()` first.");
+      throw new Error(
+        "Code is not compiled, please define the factory or call `await this.compile()` first."
+      );
     const voiceMeta = JSON.parse(voiceFactory.json);
     const effectMeta = effectFactory ? JSON.parse(effectFactory.json) : void 0;
-    const instance = await FaustWasmInstantiator_default.createAsyncPolyDSPInstance(voiceFactory, mixerModule, voices, effectFactory || void 0);
+    const instance = await FaustWasmInstantiator_default.createAsyncPolyDSPInstance(
+      voiceFactory,
+      mixerModule,
+      voices,
+      effectFactory || void 0
+    );
     const sampleSize = voiceMeta.compile_options.match("-double") ? 8 : 4;
-    const polyDsp = new FaustPolyWebAudioDsp(instance, sampleRate, sampleSize, bufferSize);
+    const polyDsp = new FaustPolyWebAudioDsp(
+      instance,
+      sampleRate,
+      sampleSize,
+      bufferSize
+    );
     return new FaustPolyOfflineProcessor(polyDsp, bufferSize);
   }
   getMeta() {
@@ -3753,22 +3931,24 @@ const dependencies = {
     const e = this.effectFactory ? JSON.parse(this.effectFactory.json) : null;
     const r = { ...o };
     if (e) {
-      r.ui = [{
-        type: "tgroup",
-        label: "Sequencer",
-        items: [
-          { type: "vgroup", label: "Instrument", items: o.ui },
-          { type: "vgroup", label: "Effect", items: e.ui }
-        ]
-      }];
+      r.ui = [
+        {
+          type: "tgroup",
+          label: "Sequencer",
+          items: [
+            { type: "vgroup", label: "Instrument", items: o.ui },
+            { type: "vgroup", label: "Effect", items: e.ui }
+          ]
+        }
+      ];
     } else {
-      r.ui = [{
-        type: "tgroup",
-        label: "Polyphonic",
-        items: [
-          { type: "vgroup", label: "Voices", items: o.ui }
-        ]
-      }];
+      r.ui = [
+        {
+          type: "tgroup",
+          label: "Polyphonic",
+          items: [{ type: "vgroup", label: "Voices", items: o.ui }]
+        }
+      ];
     }
     return r;
   }
