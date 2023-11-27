@@ -405,7 +405,7 @@ const dependencies = {
 
   async createNodeFromProcCode<SP extends boolean = false>(
     context: BaseAudioContext,
-    processorCode: string,
+    procCodeUrl: string,
     name = this.name,
     factory = this.factory as LooseFaustDspFactory,
     sp = false as SP,
@@ -453,10 +453,7 @@ const dependencies = {
           ?.has(processorName)
       ) {
         try {
-          const url = URL.createObjectURL(
-            new Blob([processorCode], { type: "text/javascript" })
-          );
-          await context.audioWorklet.addModule(url);
+          await context.audioWorklet.addModule(procCodeUrl);
           // Keep the DSP name
           FaustMonoDspGenerator.gWorkletProcessors
             .get(context)

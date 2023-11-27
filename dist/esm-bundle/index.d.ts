@@ -1269,7 +1269,7 @@ export declare class FaustMonoDspGenerator implements IFaustMonoDspGenerator {
 	compile(compiler: IFaustCompiler, name: string, code: string, args: string): Promise<this | null>;
 	createNode<SP extends boolean = false>(context: BaseAudioContext, name?: string, factory?: LooseFaustDspFactory, sp?: SP, bufferSize?: number, processorName?: string): Promise<SP extends true ? FaustMonoScriptProcessorNode | null : FaustMonoAudioWorkletNode | null>;
 	createProcessorCode(context: BaseAudioContext, name?: string, factory?: LooseFaustDspFactory, processorName?: string): Promise<string | undefined>;
-	createNodeFromProcCode<SP extends boolean = false>(context: BaseAudioContext, processorCode: string, name?: string, factory?: LooseFaustDspFactory, sp?: SP, bufferSize?: number, processorName?: string): Promise<SP extends true ? FaustMonoScriptProcessorNode | null : FaustMonoAudioWorkletNode | null>;
+	createNodeFromProcCode<SP extends boolean = false>(context: BaseAudioContext, procCodeUrl: string, name?: string, factory?: LooseFaustDspFactory, sp?: SP, bufferSize?: number, processorName?: string): Promise<SP extends true ? FaustMonoScriptProcessorNode | null : FaustMonoAudioWorkletNode | null>;
 	createFFTNode(context: BaseAudioContext, fftUtils: typeof FFTUtils, name?: string, factory?: LooseFaustDspFactory, fftOptions?: Partial<FaustFFTOptionsData>, processorName?: string): Promise<FaustMonoAudioWorkletNode | null>;
 	createAudioWorkletProcessor(name?: string, factory?: LooseFaustDspFactory, processorName?: string): Promise<{
 		new (options: AudioWorkletNodeOptions): AudioWorkletProcessor;

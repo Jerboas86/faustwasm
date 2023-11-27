@@ -3584,7 +3584,7 @@ const dependencies = {
 `;
       }
     }
-    async createNodeFromProcCode(context, processorCode, name = this.name, factory = this.factory, sp = false, bufferSize = 1024, processorName = (factory == null ? void 0 : factory.shaKey) || name) {
+    async createNodeFromProcCode(context, procCodeUrl, name = this.name, factory = this.factory, sp = false, bufferSize = 1024, processorName = (factory == null ? void 0 : factory.shaKey) || name) {
       var _a, _b;
       if (!factory)
         throw new Error(
@@ -3615,10 +3615,7 @@ const dependencies = {
           _FaustMonoDspGenerator.gWorkletProcessors.set(context, /* @__PURE__ */ new Set());
         if (!((_a = _FaustMonoDspGenerator.gWorkletProcessors.get(context)) == null ? void 0 : _a.has(processorName))) {
           try {
-            const url = URL.createObjectURL(
-              new Blob([processorCode], { type: "text/javascript" })
-            );
-            await context.audioWorklet.addModule(url);
+            await context.audioWorklet.addModule(procCodeUrl);
             (_b = _FaustMonoDspGenerator.gWorkletProcessors.get(context)) == null ? void 0 : _b.add(processorName);
           } catch (e) {
             throw e;
