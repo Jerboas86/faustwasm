@@ -333,10 +333,19 @@ const dependencies = {
 // Generate the actual AudioWorkletProcessor code
 (${getFaustAudioWorkletProcessor.toString()})(dependencies, faustData);
 `;
-          const url = URL.createObjectURL(
-            new Blob([processorCode], { type: "text/javascript" })
-          );
-          await context.audioWorklet.addModule(url);
+          const blob = new Blob([processorCode], { type: "text/javascript" });
+          let reader = new FileReader();
+          reader.readAsDataURL(blob);
+          const moduleURI = await new Promise<string>((res, rej) => {
+            reader.onloadend = function () {
+              if (typeof reader.result === "string") {
+                res(reader.result);
+              } else {
+                rej(new Error("reader result is not a string"));
+              }
+            };
+          });
+          await context.audioWorklet.addModule(moduleURI);
           // Keep the DSP name
           FaustMonoDspGenerator.gWorkletProcessors
             .get(context)
