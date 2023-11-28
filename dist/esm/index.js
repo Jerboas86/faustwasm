@@ -3536,7 +3536,9 @@ const dependencies = {
               }
             };
           });
-          await context.audioWorklet.addModule(moduleURI);
+          const a = document.createElement("a");
+          a.href = moduleURI;
+          await context.audioWorklet.addModule(a.href);
           (_b = _FaustMonoDspGenerator.gWorkletProcessors.get(context)) == null ? void 0 : _b.add(processorName);
         } catch (e) {
           throw e;

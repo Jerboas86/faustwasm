@@ -345,7 +345,9 @@ const dependencies = {
               }
             };
           });
-          await context.audioWorklet.addModule(moduleURI);
+          const a = document.createElement("a");
+          a.href = moduleURI;
+          await context.audioWorklet.addModule(a.href);
           // Keep the DSP name
           FaustMonoDspGenerator.gWorkletProcessors
             .get(context)
