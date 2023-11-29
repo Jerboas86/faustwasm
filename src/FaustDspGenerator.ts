@@ -334,20 +334,8 @@ const dependencies = {
 (${getFaustAudioWorkletProcessor.toString()})(dependencies, faustData);
 `;
           const blob = new Blob([processorCode], { type: "text/javascript" });
-          let reader = new FileReader();
-          reader.readAsDataURL(blob);
-          const moduleURI = await new Promise<string>((res, rej) => {
-            reader.onloadend = function () {
-              if (typeof reader.result === "string") {
-                res(reader.result);
-              } else {
-                rej(new Error("reader result is not a string"));
-              }
-            };
-          });
-          const a = document.createElement("a");
-          a.href = moduleURI;
-          await context.audioWorklet.addModule(a.href);
+          const url = URL.createObjectURL(blob);
+          await context.audioWorklet.addModule(url);
           // Keep the DSP name
           FaustMonoDspGenerator.gWorkletProcessors
             .get(context)
